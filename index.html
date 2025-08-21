@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>cURL变量解析</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --light: #f9fafb;
+      --dark: #1f2937;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f8fafc, #f0f5ff);
+      color: var(--dark);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 320px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      z-index: -1;
+      border-radius: 0 0 40% 40%;
+      opacity: 0.1;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      position: relative;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transition: var(--transition);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.25);
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .card-header h1 {
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+      margin-right: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-header .subtitle {
+      font-size: 15px;
+      opacity: 0.9;
+      max-width: 600px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .card-body {
+      padding: 32px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title i {
+      font-size: 20px;
+      color: var(--primary);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: var(--dark);
+      font-size: 15px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      background: white;
+      transition: var(--transition);
+      color: var(--dark);
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    textarea {
+      min-height: 180px;
+      font-family: 'Roboto Mono', monospace, sans-serif;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--gray-600);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-100);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      color: var(--gray-600);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow);
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .kv-details {
+      background: var(--gray-100);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      margin-top: 16px;
+      border: 1px dashed var(--gray-300);
+      font-family: 'Roboto Mono', monospace;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .result-section {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      margin-top: 28px;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .copy-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      background: var(--success);
+      color: white;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease, fadeOut 0.5s ease 2s forwards;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    .curl-examples {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--gray-600);
+    }
+
+    .curl-examples a {
+      color: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .curl-examples a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .card-header {
+        padding: 20px;
+      }
+
+      .card-header h1 {
+        font-size: 22px;
+      }
+
+      .card-body {
+        padding: 24px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h1><i class="fas fa-code-branch"></i>cURL变量解析</h1>
+        <div class="subtitle">
+          专为iOS格式定制：将cURL命令转换为指定格式，支持代理配置
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form method="post" id="f">
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-terminal"></i>
+            <label for="curl">粘贴 cURL 命令</label>
+          </div>
+          <textarea name="curl" id="curl" placeholder="curl 'https://...' -H 'Cookie: ...' --data '{&quot;message&quot;:&quot;...&quot;}'"></textarea>
+          <div class="curl-examples">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('curl').value=atob('Y3VybCAtWCBQT1NUICdodHRwczovL3R1YmUuZS5rdS4uLi4uYmUvaW5zcGlyZS9ob21lJyAtSCAnVXNlci1BZ2VudDogTW96aWxsYS81LjAgKGlQaG9uZTsgQ1AuLi4nIC1IICdBY2NlcHQ6IGFwcGxpY2F0aW9uL2pzb24n IC1IICdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nIC1IICdTeXN0ZW1VYTogTW96aWxsYS81LjAgKGlQaC4uLi4nIC1IICdBY2NlcHQtTGFuZ3VhZ2U6IHpoLUhhbnMtQ047cT0xJyAtSCAnS3MtU2lnMzogMzA0MzcwNDgyOGNjYy4uLicgLUggJ0Jyb3dzZXJVYTogTW96aWxsYS81Li4uLicgLUggJ0tzLUVuY29kaW5nOiAyJyAtSCAnQ29va2llOiBkaWQ9SU9TX0Y2Qi4uLi47JyAtZCAneyJhcHBJZCI6IjEwOTE0MDAwMTIiLCJtZXNzYWdlIjoiVSsyNXFxbmlsNERTYVFIVkVOUnouLi4iLCJhcHBWZXJzaW9uIjoiMi4xLjEwIiwidmVyc2lvbiI6IjMuMy42Ni4yMTEwIn0nIC0taHR0cDEuMQ==')">
+              <i class="fas fa-code"></i> 点击展示示例
+            </button>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <div class="section-title">
+              <i class="fas fa-user-tag"></i>
+              <label for="remark">账号备注</label>
+            </div>
+            <input type="text" name="remark" id="remark" value="备注" placeholder="例如：测试账号1">
+
+            <div class="section-title" style="margin-top: 20px;">
+              <i class="fas fa-globe"></i>
+              <label for="proxy">代理配置（可选）</label>
+            </div>
+            <input type="text" name="proxy" id="proxy" placeholder="格式：ip|端口|用户名|密码（例如：12.0.1.91|2010|user|password）">
+          </div>
+
+          <div style="display: flex; align-items: flex-end; gap: 16px">
+            <button class="btn btn-primary" type="submit">
+              <i class="fas fa-magic"></i> 点击解析
+            </button>
+            <button class="btn btn-secondary" type="button" onclick="document.getElementById('curl').value='';">
+              <i class="fas fa-eraser"></i> 清空参数
+            </button>
+          </div>
+        </div>
+
+        <!-- 结果展示区域 -->
+        <div id="result-container" class="result-section" style="display: none;">
+          <div class="section-title">
+            <i class="fas fa-check-circle" style="color: var(--success);"></i>
+            <span>解析详情</span>
+          </div>
+          <div class="kv-details">
+            <div><strong>账号备注:</strong> <span id="result-remark"></span></div>
+            <div><strong>解析时间:</strong> <span id="result-time"></span></div>
+            <div id="proxy-info" style="display: none;">
+              <strong>代理配置:</strong> <span id="result-proxy"></span>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 24px;">
+            <i class="fas fa-code" style="color: var(--primary);"></i>
+            <span>解析结果</span>
+          </div>
+          <label for="out"></label><textarea id="out" readonly style="min-height: 120px; font-family: 'Roboto Mono', monospace;"></textarea>
+
+          <div class="copy-section">
+            <button class="btn btn-primary" onclick="copyOut()">
+              <i class="fas fa-copy"></i> 复制结果
+            </button>
+            <span class="badge badge-success" id="copy-status">
+              <i class="fas fa-check"></i> 准备复制
+            </span>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <i class="fas fa-check-circle"></i>
+  <span>结果已成功复制到剪贴板！</span>
+</div>
+
+<script>
+  const toast = document.getElementById('toast');
+  const resultContainer = document.getElementById('result-container');
+  const form = document.getElementById('f');
+
+  async function copyOut() {
+    try {
+      const textToCopy = document.getElementById('out').value;
+      await navigator.clipboard.writeText(textToCopy);
+      showToast('结果已复制到剪贴板');
+    } catch (err) {
+      console.error('复制失败:', err);
+      showToast('复制失败，请手动复制');
+    }
+  }
+
+  function showToast(message) {
+    toast.querySelector('span').textContent = message;
+    toast.style.display = 'flex';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 2500);
+  }
+
+  function parseProxy(proxyStr) {
+    if (!proxyStr) return '';
+    const parts = proxyStr.split('|').slice(0, 4);
+    if (parts.length < 2) return '';
+    if (parts.length === 2) return parts.join('|');
+    if (parts.length === 3 && !parts[2]) return parts.slice(0, 2).join('|');
+    if (parts.length === 4 && !parts[2] && !parts[3]) return parts.slice(0, 2).join('|');
+
+    return parts.join('|');
+  }
+
+  function parseCurl(curlCommand, remark = '', proxy = '') {
+    const headers = {};
+    curlCommand.replace(/-H\s+(?:'([^']+)'|"([^"]+)")/g, (_, g1, g2) => {
+      const [key, value] = (g1 || g2).split(':').map(s => s.trim());
+      if (key) headers[key] = value;
+      return '';
+    });
+
+    const dataMatch = curlCommand.match(/(?:-d|--data)\s+(?:'([^']+)'|"([^"]+)")/s);
+    let data = (dataMatch?.[1] || dataMatch?.[2] || '').replace(/\\[rn]|[\r\n ]/g, '');
+
+    try {
+      if ((headers['Content-Type'] || headers['content-type'])?.includes('application/json')) {
+        data = JSON.parse(data);
+      }
+    } catch (e) {
+      console.warn("JSON parse error:", e);
+    }
+
+    const resultParts = [
+      remark || '备注',
+      headers.Cookie || '',
+      headers.BrowserUa || '',
+      headers['User-Agent'] || '',
+      headers.SystemUa || '',
+      'com.kwai.xifan',
+      data.message || ''
+    ];
+
+    const parsedProxy = parseProxy(proxy);
+    if (parsedProxy) {
+      resultParts.push(parsedProxy);
+    }
+
+    return resultParts.join('#');
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const curlCommand = document.getElementById('curl').value.trim();
+    if (!curlCommand) {
+      showToast('请输入有效的cURL命令');
+      return;
+    }
+
+    try {
+      const remark = document.getElementById('remark').value.trim();
+      const proxy = document.getElementById('proxy').value.trim();
+
+      document.getElementById('out').value = parseCurl(curlCommand, remark, proxy);
+      document.getElementById('result-remark').textContent = remark || '备注';
+      document.getElementById('result-time').textContent = new Date().toLocaleString();
+
+      const parsedProxy = parseProxy(proxy);
+      if (parsedProxy) {
+        document.getElementById('proxy-info').style.display = 'block';
+        document.getElementById('result-proxy').textContent = parsedProxy;
+      } else {
+        document.getElementById('proxy-info').style.display = 'none';
+      }
+
+      resultContainer.style.display = 'block';
+      resultContainer.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (error) {
+      showToast('解析cURL时出错: ' + error.message);
+      console.error(error);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const curlInput = document.getElementById('curl');
+    if (curlInput) {
+      curlInput.focus();
+    }
+  });
+</script>
+</body>
+</html>
